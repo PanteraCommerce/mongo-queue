@@ -1,6 +1,6 @@
 MOCHA	=	./node_modules/mocha/bin/mocha
 
-TIMEOUT	=	30000
+TIMEOUT	=	5000
 
 test:
 	@$(MOCHA) -u tdd -t $(TIMEOUT) -R spec
