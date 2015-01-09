@@ -6,7 +6,7 @@
   "dependencies": {
     "async": "*",
     "underscore": "*",
-    "mongodb": "*"
+    "mongodb": "~2.0"
   },
   "devDependencies": {
     "mocha": "*",
