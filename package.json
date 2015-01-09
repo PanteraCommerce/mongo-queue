@@ -13,9 +13,5 @@
     "should": "*"
   },
   "scripts": {},
-  "readme": "ERROR: No README data found!",
-  "_id": "mongo-queue@0.1.1",
-  "_shasum": "0597d208092c36e5486bfb56216bf00bccd662ff",
-  "_resolved": "git+ssh://git@pantera.beanstalkapp.com:mongo-queue.git#469c6a348ee648dcacb5d7abb27eafd7ec07014f",
-  "_from": "mongo-queue@git+ssh://git@pantera.beanstalkapp.com:mongo-queue.git"
+  "readme": "No README"
 }
