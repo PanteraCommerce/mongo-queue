@@ -4,19 +4,19 @@ var _ = require('underscore');
 var mq = require('../');
 
 var config = {
-	host: 'localhost',
-	port: 27017,
-	db: 'job'
+	url: 'mongodb://localhost:27017',
+	db: 'jobs'
 };
 
 mq.configure(config);
 
 async.waterfall([
 	function (next) {
-		mq('Chan').consume('Alpha', next);
-	},
-	function (msg, next) {
-		mq('Chan').publish('Alpha', msg, next);
+	// 	mq('chan').publish('Alpha', 'teub', next);
+	// },
+	// function (next) {
+		mq('chan').consume('Alpha', console.log);
+		// mq('chan').publish('Alpha', msg, next);
 	}
 ], function (err) {
 	if (err) {

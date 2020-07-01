@@ -9,7 +9,7 @@ var mq = require('../');
 var separator = '##';
 var config = {
 	url: 'mongodb://localhost:27017',
-	dbName: 'mocha_job',
+	db: 'mocha_job',
 	sep: separator
 };
 
@@ -32,37 +32,37 @@ var q = {
 	delta: 'delta'
 };
 
-suiteSetup(function (done) {
-	async.waterfall([
-		function (next) {
-			MongoClient.connect(config.url + '/' + config.dbName, next);
-		},
-		function (db, next) {
-			db.dropDatabase(next);
-		}
-	], done);
-});
-
-suite('Basic tests (1 channel, 1 queue, no prefix)', function () {
+describe('Basic tests (1 channel, 1 queue, no prefix)', function () {
 	var cache = {};
 
-	test('configure mongo-queue', function () {
-		mq.configure(config);
+	it('Drop db', function (done) {
+		async.waterfall([
+      function (next) {
+        MongoClient.connect(config.url, { useUnifiedTopology: true }, next);
+      },
+      function (client, next) {
+        client.db(config.db).dropDatabase(next);
+      }
+    ], done);
+  });
+
+  it('configure mongo-queue', function (done) {
+		mq.configure(config, done);
 	});
 
-	test('consume() should return null when queue does not exists yet', function (done) {
+	it('consume() should return null when queue does not exists yet', function (done) {
 		mq(chan.lion).consume(q.alpha, function (err, res) {
 			should.not.exist(err);
 			should.not.exist(res);
 			done();
 		});
 	});
-	test('publish() should post a message', function (done) {
+	it('publish() should post a message', function (done) {
 		cache.msg1 = { color: 'black', n: 0 };
 		mq(chan.lion).publish(q.alpha, cache.msg1, done);
 	});
 
-	test('consume() should return the lately published message', function (done) {
+	it('consume() should return the lately published message', function (done) {
 		mq(chan.lion).consume(q.alpha, function (err, res) {
 			should.not.exist(err);
 			res.should.eql(cache.msg1);
@@ -70,7 +70,7 @@ suite('Basic tests (1 channel, 1 queue, no prefix)', function () {
 		});
 	});
 
-	test('queue should now be empty and consume() should return null', function (done) {
+	it('queue should now be empty and consume() should return null', function (done) {
 		mq(chan.lion).consume(q.alpha, function (err, res) {
 			should.not.exist(err);
 			should.not.exist(res);
@@ -78,7 +78,7 @@ suite('Basic tests (1 channel, 1 queue, no prefix)', function () {
 		});
 	});
 
-	test('posting X messages on the same queue (series)', function (done) {
+	it('posting X messages on the same queue (series)', function (done) {
 		cache.msg2 = _.range(10).map(function (n) {
 			return { color: 'black', n: n };
 		});
@@ -87,7 +87,7 @@ suite('Basic tests (1 channel, 1 queue, no prefix)', function () {
 		}, done);
 	});
 
-	test('Consumin X + 1 messages on the same queue (series)', function (done) {
+	it('Consumin X + 1 messages on the same queue (series)', function (done) {
 		async.forEachSeries(cache.msg2.concat(null), function (msg, asyncCb) {
 			mq(chan.lion).consume(q.alpha, function (err, res) {
 				should.not.exist(err);
@@ -103,10 +103,10 @@ suite('Basic tests (1 channel, 1 queue, no prefix)', function () {
 	});
 });
 
-suite('Intermadiate tests with prefix (1 channel, 4 queue)', function () {
+describe('Intermadiate tests with prefix (1 channel, 4 queue)', function () {
 	var cache = {};
 
-	test(util.format('publish() on <%s> and <%s%s%s>', q.alpha, p.shiva, separator, q.alpha), function (done) {
+	it(util.format('publish() on <%s> and <%s%s%s>', q.alpha, p.shiva, separator, q.alpha), function (done) {
 		cache.alpha = { type: 'simple', n: 0 };
 		cache.shivaAlpha = { type: 'composite', n: 1 };
 		async.parallel([
@@ -119,7 +119,7 @@ suite('Intermadiate tests with prefix (1 channel, 4 queue)', function () {
 		], done);
 	});
 
-	test(util.format('consume() on <%s> and <%s%s%s>', q.alpha, p.shiva, separator, q.alpha), function (done) {
+	it(util.format('consume() on <%s> and <%s%s%s>', q.alpha, p.shiva, separator, q.alpha), function (done) {
 		async.parallel([
 			function (asyncCb) {
 				mq(chan.lion).consume(q.alpha, asyncCb);
@@ -135,7 +135,7 @@ suite('Intermadiate tests with prefix (1 channel, 4 queue)', function () {
 		});
 	});
 
-	test(util.format('Queues <%s> and <%s%s%s> should be empty', q.alpha, p.shiva, separator, q.alpha), function (done) {
+	it(util.format('Queues <%s> and <%s%s%s> should be empty', q.alpha, p.shiva, separator, q.alpha), function (done) {
 		async.parallel([
 			function (asyncCb) {
 				mq(chan.lion).consume(q.alpha, asyncCb);
@@ -151,7 +151,7 @@ suite('Intermadiate tests with prefix (1 channel, 4 queue)', function () {
 		});
 	});
 
-	test('Should be able to record prefix object...', function (done) {
+	it('Should be able to record prefix object...', function (done) {
 		cache.vishnu = mq(chan.lion).prefix(p.vishnu);
 		cache.msg1 = { chan: chan.lion, prefix: [p.vishnu], queue: q.alpha };
 		cache.vishnu.publish(q.alpha, cache.msg1, function (err) {
@@ -160,7 +160,7 @@ suite('Intermadiate tests with prefix (1 channel, 4 queue)', function () {
 		});
 	});
 
-	test('...and order reuse it', function (done) {
+	it('...and order reuse it', function (done) {
 		cache.vishnu.consume(q.alpha, function (err, res) {
 			should.not.exist(err);
 			res.should.eql(cache.msg1);
@@ -168,7 +168,7 @@ suite('Intermadiate tests with prefix (1 channel, 4 queue)', function () {
 		});
 	});
 
-	test('A prefix object should be able to return another prefix...', function (done) {
+	it('A prefix object should be able to return another prefix...', function (done) {
 		cache.shivaVishnu = cache.vishnu.prefix(p.shiva);
 		cache.msg2 = { chan: chan.lion, prefix: [p.shiva, p.vishnu], queue: q.alpha };
 		cache.shivaVishnu.publish(q.alpha, cache.msg2, function (err) {
@@ -177,7 +177,7 @@ suite('Intermadiate tests with prefix (1 channel, 4 queue)', function () {
 		});
 	});
 
-	test('...and use it the same way', function (done) {
+	it('...and use it the same way', function (done) {
 		cache.shivaVishnu.consume(q.alpha, function (err, res) {
 			should.not.exist(err);
 			res.should.eql(cache.msg2);
@@ -186,10 +186,10 @@ suite('Intermadiate tests with prefix (1 channel, 4 queue)', function () {
 	});
 });
 
-suite('Intermadiate tests with channels', function () {
+describe('Intermadiate tests with channels', function () {
 	var cache = {};
 
-	test('Different queues may have the same name if the belong to different channels', function (done) {
+	it('Different queues may have the same name if the belong to different channels', function (done) {
 		cache.bearBravo = { chan: chan.bear, prefix: [], queue: q.bravo };
 		cache.orcaBravo = { chan: chan.orca, prefix: [], queue: q.bravo };
 		async.parallel([
@@ -202,7 +202,7 @@ suite('Intermadiate tests with channels', function () {
 		], done);
 	});
 
-	test('...so we can get document from 2 different queues', function (done) {
+	it('...so we can get document from 2 different queues', function (done) {
 		async.parallel([
 			function (asyncCb) {
 				mq(chan.bear).consume(q.bravo, asyncCb);
@@ -218,7 +218,7 @@ suite('Intermadiate tests with channels', function () {
 		});
 	});
 
-	test('We should be able to do the same thing with queues whose name is prefixed', function (done) {
+	it('We should be able to do the same thing with queues whose name is prefixed', function (done) {
 		cache.bearShivaCharlie = { chan: chan.bear, prefix: [p.shiva], queue: q.charlie };
 		cache.orcaShivaCharlie = { chan: chan.orca, prefix: [p.shiva], queue: q.charlie };
 		async.parallel([
@@ -231,7 +231,7 @@ suite('Intermadiate tests with channels', function () {
 		], done);
 	});
 
-	test('...and get the documents the same way', function (done) {
+	it('...and get the documents the same way', function (done) {
 		async.parallel([
 			function (asyncCb) {
 				mq(chan.bear).consume(p.shiva, q.charlie, asyncCb);
@@ -248,10 +248,10 @@ suite('Intermadiate tests with channels', function () {
 	});
 });
 
-suite('Stress tests', function () {
+describe('Stress tests', function () {
 	var cache = {};
 
-	test('Stress publish()', function (done) {
+	it('Stress publish()', function (done) {
 		cache.stress = {};
 		async.forEach([chan.orca, chan.wolf], function (chanName, asyncCb) {
 			var chan = mq(chanName);
@@ -259,18 +259,17 @@ suite('Stress tests', function () {
 				return { chan: chanName, n: n };
 			});
 			async.forEachSeries(docs, function (doc, feCb) {
-				chan.publish(q.alpha, doc);
-				setImmediate(feCb);
+				chan.publish(q.alpha, doc, feCb);
 			}, asyncCb);
 		}, done);
 	});
 
-	test('Check order (serial consume() calls)', function (done) {
+	it('Check order (serial consume() calls)', function (done) {
 		async.forEach(_.keys(cache.stress), function (chanName, feCb) {
 			var chan = mq(chanName);
 			async.forEachSeries(cache.stress[chanName], function (doc, feCb) {
 				chan.consume(q.alpha, function (err, res) {
-					should.not.exist(err);
+          should.not.exist(err);
 					res.should.eql(doc);
 					feCb();
 				});
@@ -278,7 +277,7 @@ suite('Stress tests', function () {
 		}, done);
 	});
 
-	test('[Hard] stress publish()', function (done) {
+	it('[Hard] stress publish()', function (done) {
 		cache.stress = {};
 		async.forEach([chan.orca, chan.wolf], function (chanName, asyncCb) {
 			var chan = mq(chanName);
@@ -292,7 +291,7 @@ suite('Stress tests', function () {
 		}, done);
 	});
 
-	test('[Hard] Check order (serial consume() calls)', function (done) {
+	it('[Hard] Check order (serial consume() calls)', function (done) {
 		async.forEach(_.keys(cache.stress), function (chanName, feCb) {
 			var chan = mq(chanName);
 			async.forEachSeries(cache.stress[chanName], function (doc, feCb) {
@@ -306,18 +305,18 @@ suite('Stress tests', function () {
 	});
 });
 
-suite('get()', function () {
+describe('get()', function () {
 	var cache = {};
 	var col = null;
 	var qn = q.charlie;
 
-	test('publish a message', function (done) {
+	it('publish a message', function (done) {
 		col = mq(chan.wolf);
 		cache.doc = { lorem: 'ipsum', dolor :'sit amet', consectetur: 'adipiscing elit' };
 		col.publish(qn, cache.doc, done);
 	});
 
-	test('should be able to get it without consuming it', function (done) {
+	it('should be able to get it without consuming it', function (done) {
 		col.get(qn, function (err, res) {
 			should.not.exist(err);
 			res.should.eql(cache.doc);
@@ -325,7 +324,7 @@ suite('get()', function () {
 		});
 	});
 
-	test('should be able to consume it', function (done) {
+	it('should be able to consume it', function (done) {
 		col.consume(qn, function (err, res) {
 			should.not.exist(err);
 			res.should.eql(cache.doc);
@@ -333,7 +332,7 @@ suite('get()', function () {
 		});
 	});
 
-	test('should be unable to get this message anymore', function (done) {
+	it('should be unable to get this message anymore', function (done) {
 		col.get(qn, function (err, res) {
 			should.not.exist(err);
 			should.not.exist(res);
@@ -342,10 +341,10 @@ suite('get()', function () {
 	});
 });
 
-// suite('restore() tests', function () {
+// describe('restore() tests', function () {
 // 	var cache = {};
 
-// 	test('#1', function (done) {
+// 	it('#1', function (done) {
 // 		var col = mq(chan.orca);
 // 		var qn = q.delta;
 // 		cache.doc = { lorem: 'ipsum' }
